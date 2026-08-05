@@ -97,6 +97,8 @@ class Aliens(pygame.sprite.Sprite):
         self.move_counter=0
         self.move_dir = 1 #1=right, -1=left
 
+        self.last_bullet_created=pygame.time.get_ticks()#initnially no bullet
+        self.bullet_freq=2000 #in milliseconds, 2 sec
 
     def update(self):
         #move left and right 
@@ -107,6 +109,15 @@ class Aliens(pygame.sprite.Sprite):
             #reset it some value
             self.move_counter*=self.move_dir
 
+        #shoot limit  to 5 bullets, 2 seconds, need at least one alien
+        time_now=pygame.time.get_ticks()
+        if time_now - self.last_bullet_created > self.bullet_freq and \
+            len(alien_bullet_group)<5 and len(alien_group)>0:
+            attacking_alien=random.choice(alien_group.sprites())
+            alien_bullet = AliensBullet(attacking_alien.rect.centerx,attacking_alien.rect.bottom)
+            alien_bullet_group.add(alien_bullet)
+            self.last_bullet_created=time_now
+
 def create_aliens():
     for row in range(rows):
         for col in range(cols):
@@ -115,17 +126,32 @@ def create_aliens():
             alien=Aliens(50+col*100 , 40+row*70)
             alien_group.add(alien)
 
+#create bullet calss for spaceship bullets
+class AliensBullet(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        super().__init__()
+        self.image = pygame.image.load("img/alien_bullet.png")
+        self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
+
+    def update(self):
+        #move bullet down each iteration
+        self.rect.y += 2
+        #remove bullet if it goes off screen
+        if self.rect.bottom > SCREEN_HEIGHT:
+            self.kill()
+
 #group instances
 spaceship_group = pygame.sprite.Group()
 spaceship_bullet_group = pygame.sprite.Group()
+alien_group=pygame.sprite.Group()
+alien_bullet_group = pygame.sprite.Group()
 
 spaceship = Spaceship(SCREEN_WIDTH//2, SCREEN_HEIGHT-80,3)
 spaceship_group.add(spaceship)
 
-alien_group=pygame.sprite.Group()
 #we dont ned to create this again and agian so outside of loop
 create_aliens()
-
 
 run = True
 while run:
@@ -144,11 +170,13 @@ while run:
     spaceship_group.update()
     spaceship_bullet_group.update()
     alien_group.update()
+    alien_bullet_group.update()
 
     #draw 
     spaceship_group.draw(screen)
     spaceship_bullet_group.draw(screen)
     alien_group.draw(screen)
+    alien_bullet_group.draw(screen)
 
     #update display
     pygame.display.update()
