@@ -1,4 +1,5 @@
 import pygame
+import random
 
 pygame.init()
 pygame.mixer.init()
@@ -15,12 +16,16 @@ RED = (255, 0, 0) #spaceship about to destroyed
 clock = pygame.time.Clock()
 fps = 60
 
+#define game variables
+rows=6
+cols=6# rows cols for aliens
+
 # Create game window
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("$p@¢£ !nv@d£r$")
 
 # Load bg image
-background = pygame.image.load("img/background.png").convert()
+background = pygame.image.load("img/background.png")
 
 def draw_background():
     screen.blit(background, (0, 0))
@@ -82,12 +87,45 @@ class SpaceshipBullet(pygame.sprite.Sprite):
         if self.rect.bottom < 0:
             self.kill()
 
+#alien class
+class Aliens(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        super().__init__()
+        self.image = pygame.image.load("img/alien"+str(random.randint(1,5))+".png")
+        self.rect = self.image.get_rect()
+        self.rect.center = (x,y)
+        self.move_counter=0
+        self.move_dir = 1 #1=right, -1=left
+
+
+    def update(self):
+        #move left and right 
+        self.rect.x+=self.move_dir
+        self.move_counter+=1
+        if abs(self.move_counter)>30:
+            self.move_dir*=-1
+            #reset it some value
+            self.move_counter*=self.move_dir
+
+def create_aliens():
+    for row in range(rows):
+        for col in range(cols):
+            #start form 100 pixel form left, adn create some gap bw
+            #two alien
+            alien=Aliens(50+col*100 , 40+row*70)
+            alien_group.add(alien)
+
 #group instances
 spaceship_group = pygame.sprite.Group()
 spaceship_bullet_group = pygame.sprite.Group()
 
 spaceship = Spaceship(SCREEN_WIDTH//2, SCREEN_HEIGHT-80,3)
 spaceship_group.add(spaceship)
+
+alien_group=pygame.sprite.Group()
+#we dont ned to create this again and agian so outside of loop
+create_aliens()
+
 
 run = True
 while run:
@@ -102,14 +140,16 @@ while run:
         if event.type == pygame.QUIT:
             run = False
 
-    #update spaceship
+    #update 
     spaceship_group.update()
-    #update bullets
     spaceship_bullet_group.update()
-    #draw spaceship
+    alien_group.update()
+
+    #draw 
     spaceship_group.draw(screen)
-    #draw bullets
     spaceship_bullet_group.draw(screen)
+    alien_group.draw(screen)
+
     #update display
     pygame.display.update()
 
